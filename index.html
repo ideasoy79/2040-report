@@ -24,7 +24,7 @@
   --sans:'Pretendard','Noto Sans KR','Apple SD Gothic Neo',-apple-system,Arial,sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;background:#0E0D0C;overflow:hidden;font-family:var(--sans)}
+html,body{height:100%;background:#0E0D0C;overflow:hidden;font-family:var(--sans);touch-action:none;-webkit-text-size-adjust:100%}
 #stage{
   position:absolute;left:50%;top:50%;width:1920px;height:1080px;
   transform-origin:center center;overflow:hidden;background:var(--canvas);
@@ -1358,7 +1358,7 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
 
 <div id="prog"></div>
 </div><!-- /stage -->
-<div id="hint">← → 이동 &nbsp;·&nbsp; 더블클릭 확대 &nbsp;·&nbsp; A 전체보기</div>
+<div id="hint">← → 이동 &nbsp;·&nbsp; 두 손가락 오므리기/펴기 확대 &nbsp;·&nbsp; A 전체보기</div>
 <div id="ctl">
   <button type="button" id="btnZoom" hidden>확대 해제</button>
   <button type="button" id="btnFs">전체화면</button>
@@ -1383,8 +1383,8 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
 
   var si=0, st=0;
 
-  // ---------- 화면 맞춤 + 확대(더블클릭) ----------
-  var ZF=2.4, zk=1, tx=0, ty=0;
+  // ---------- 화면 맞춤 + 확대(두 손가락 오므리기/펴기) ----------
+  var ZMAX=4, zk=1, tx=0, ty=0;
   function baseScale(){ return Math.min(window.innerWidth/1920, window.innerHeight/1080); }
   function fit(){
     var s=baseScale()*zk;
@@ -1399,14 +1399,14 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
   }
   window.addEventListener('resize',fit); fit();
 
-  // 클릭한 지점을 그대로 붙잡은 채 확대한다
-  function zoomAt(x,y){
-    if(zk>1){ zk=1; tx=0; ty=0; }
-    else{
-      var cx=window.innerWidth/2, cy=window.innerHeight/2;
-      tx=(1-ZF)*(x-cx); ty=(1-ZF)*(y-cy); zk=ZF;
-    }
-    fit();
+  // 손가락 사이 중간점(x,y)을 화면에 붙잡아 둔 채 배율만 R배 바꾼다
+  function zoomAbout(R,x,y){
+    var nk=Math.max(1, Math.min(ZMAX, zk*R));
+    R=nk/zk; if(R===1) return;
+    var cx=window.innerWidth/2, cy=window.innerHeight/2;
+    tx=(x-cx)*(1-R)+tx*R;
+    ty=(y-cy)*(1-R)+ty*R;
+    zk=nk; fit();
   }
   function zoomOff(){ if(zk>1){ zk=1; tx=0; ty=0; fit(); } }
   btnZoom.addEventListener('click',function(e){ e.stopPropagation(); zoomOff(); });
@@ -1536,43 +1536,61 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
     else if(k==='0'){ goSlide(9); }
   });
 
-  // 클릭 이동 — 더블클릭이 들어오면 두 번 넘어간 걸 되돌린다
-  var undo=[];
+  // 클릭 이동 — 확대는 손가락으로만 하므로 넘김과 부딪히지 않는다
   document.addEventListener('click',function(e){
     if(zk>1) return;              // 확대 중에는 클릭으로 넘기지 않는다
     if(dragged){ dragged=false; return; }
-    undo.push([si,st]); if(undo.length>3) undo.shift();
     if(e.clientX < window.innerWidth*0.14){ prev(); } else { next(); }
-  });
-  document.addEventListener('dblclick',function(e){
-    if(undo.length>=2){ var s0=undo[undo.length-2]; si=s0[0]; st=s0[1]; paint(); }
-    undo.length=0;
-    zoomAt(e.clientX, e.clientY);
   });
 
   var lock=false;
   document.addEventListener('wheel',function(e){
+    // 트랙패드 오므리기/펴기는 ctrlKey가 붙은 wheel 이벤트로 들어온다
+    if(e.ctrlKey){ e.preventDefault(); zoomAbout(Math.exp(-e.deltaY*0.012), e.clientX, e.clientY); return; }
     if(zk>1){ tx-=e.deltaX; ty-=e.deltaY; fit(); return; }   // 확대 중에는 스크롤로 이동
     if(lock) return;
     if(Math.abs(e.deltaY)<12) return;
     lock=true; setTimeout(function(){lock=false;},420);
     if(e.deltaY>0) next(); else prev();
-  },{passive:true});
+  },{passive:false});
 
-  // 터치 — 스와이프 이동 + 두 번 톡톡 확대
-  var sx0=0, sy0=0, tLast=0;
+  // 터치 — 한 손가락은 넘김/이동, 두 손가락은 확대·축소
+  var sx0=0, sy0=0, px0=0, py0=0, pd0=0, pk0=1, pinch=false;
+  function tdist(e){
+    var a=e.touches[0], b=e.touches[1];
+    return Math.sqrt(Math.pow(a.clientX-b.clientX,2)+Math.pow(a.clientY-b.clientY,2));
+  }
   document.addEventListener('touchstart',function(e){
+    if(e.touches.length===2){ pinch=true; pd0=tdist(e)||1; pk0=zk; return; }
     sx0=e.touches[0].clientX; sy0=e.touches[0].clientY;
-  },{passive:true});
+    px0=sx0-tx; py0=sy0-ty;
+  },{passive:false});
+  document.addEventListener('touchmove',function(e){
+    if(e.touches.length===2&&pinch){
+      e.preventDefault();
+      var a=e.touches[0], b=e.touches[1];
+      zoomAbout((pk0*(tdist(e)/pd0))/zk,(a.clientX+b.clientX)/2,(a.clientY+b.clientY)/2);
+      return;
+    }
+    if(zk>1&&e.touches.length===1){
+      e.preventDefault();
+      tx=e.touches[0].clientX-px0; ty=e.touches[0].clientY-py0; fit();
+    }
+  },{passive:false});
+  // iOS Safari 전용 — 핀치를 gesture 이벤트로 따로 보낸다
+  var gk0=1;
+  document.addEventListener('gesturestart',function(e){ e.preventDefault(); pinch=true; gk0=zk; },false);
+  document.addEventListener('gesturechange',function(e){
+    e.preventDefault(); zoomAbout((gk0*e.scale)/zk, window.innerWidth/2, window.innerHeight/2);
+  },false);
+  document.addEventListener('gestureend',function(e){ e.preventDefault(); setTimeout(function(){pinch=false;},120); },false);
+
   document.addEventListener('touchend',function(e){
+    if(pinch){ if(e.touches.length===0) pinch=false; return; }
+    if(zk>1) return;              // 확대 중에는 스와이프로 넘기지 않는다
     var t=e.changedTouches[0];
     var dx=t.clientX-sx0, dy=t.clientY-sy0;
-    if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){ if(zk<=1){ dx<0?next():prev(); } tLast=0; return; }
-    if(Math.abs(dx)<12&&Math.abs(dy)<12){
-      var now=Date.now();
-      if(now-tLast<330){ zoomAt(t.clientX,t.clientY); tLast=0; }
-      else tLast=now;
-    }
+    if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){ dx<0?next():prev(); }
   },{passive:true});
 
   // 해시 복원

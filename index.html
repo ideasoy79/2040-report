@@ -206,6 +206,13 @@ b,strong{font-weight:600;color:var(--ink)}
 #ctl button:focus-visible{outline:2px solid var(--coral);outline-offset:2px}
 #ctl button[hidden]{display:none}
 body.faux-fs #hint{opacity:0}
+#fstoast{position:fixed;right:18px;bottom:64px;z-index:80;max-width:340px;
+  font:500 13px/1.5 var(--sans);color:#F7F4ED;background:rgba(30,27,24,.88);
+  border:1px solid rgba(250,249,245,.22);border-radius:12px;padding:11px 15px;
+  box-shadow:0 6px 22px rgba(0,0,0,.28);opacity:0;transform:translateY(6px);
+  pointer-events:none;transition:opacity .25s,transform .25s}
+#fstoast.on{opacity:1;transform:translateY(0)}
+#fstoast b{color:var(--coral);font-weight:700}
 body.zoomed #stage{cursor:grab}
 body.zoomed.grabbing #stage{cursor:grabbing}
 
@@ -1435,7 +1442,7 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
   document.addEventListener('mouseup',function(){ drag=false; document.body.classList.remove('grabbing'); });
 
   // ---------- 전체화면 ----------
-  function fsEl(){ return document.fullscreenElement||document.webkitFullscreenElement||null; }
+  function fsEl(){ return document.fullscreenElement||document.webkitFullscreenElement||document.msFullscreenElement||null; }
   var faux=false;            // Fullscreen API가 없거나 거부됐을 때 쓰는 대체 모드
   function isFull(){ return !!fsEl()||faux; }
   function setFaux(on){
@@ -1443,19 +1450,48 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
     document.body.classList.toggle('faux-fs',faux);
     syncFs();
   }
-  function reqFs(){
-    var d=document.documentElement;
-    var fn=d.requestFullscreen||d.webkitRequestFullscreen;
-    if(!fn){ setFaux(true); return; }
+  // 브라우저마다 전체화면을 허용하는 대상이 다르다 → 순서대로 시도한다
+  function fsTargets(){ return [document.documentElement, document.body]; }
+  function tryTarget(i){
+    var list=fsTargets();
+    if(i>=list.length){ fsFail(); return; }
+    var el=list[i]; if(!el){ tryTarget(i+1); return; }
+    var fn=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;
+    if(!fn){ tryTarget(i+1); return; }
     var r;
-    try{ r=fn.call(d); }catch(err){ setFaux(true); return; }
-    if(r&&typeof r.then==='function'){ r.then(syncFs)['catch'](function(){ setFaux(true); }); }
-    else{ setTimeout(function(){ if(!fsEl()) setFaux(true); },400); }
+    try{ r=fn.call(el); }
+    catch(err){ tryTarget(i+1); return; }
+    if(r&&typeof r.then==='function'){
+      r.then(syncFs)['catch'](function(){ tryTarget(i+1); });
+    }else{
+      // Safari의 webkit 계열은 Promise를 돌려주지 않는다 — 전환 애니메이션을 기다린다
+      setTimeout(function(){ if(fsEl()) syncFs(); else tryTarget(i+1); },900);
+    }
+  }
+  function reqFs(){
+    if(!(document.fullscreenEnabled===false&&document.webkitFullscreenEnabled===false)){ tryTarget(0); }
+    else fsFail();
+  }
+  // 브라우저가 끝내 거부하면 — 조용히 죽지 말고 무엇을 누르면 되는지 알려준다
+  function fsFail(){
+    setFaux(false);            // 실패했으면 버튼이 "해제"라고 거짓말하지 않게 한다
+    syncFs();
+    var mac=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent);
+    var saf=/^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+    var key = saf ? '⌃⌘F' : (mac ? '⌃⌘F' : 'F11');
+    toast('브라우저가 전체화면을 막았습니다 &mdash; 키보드 <b>'+key+'</b>로 전환해 주세요');
+  }
+  var toastT;
+  function toast(html){
+    var t=document.getElementById('fstoast');
+    if(!t){ t=document.createElement('div'); t.id='fstoast'; document.body.appendChild(t); }
+    t.innerHTML=html; t.classList.add('on');
+    clearTimeout(toastT); toastT=setTimeout(function(){ t.classList.remove('on'); },5200);
   }
   function exitFs(){
     if(faux) setFaux(false);
     if(fsEl()){
-      var fn=document.exitFullscreen||document.webkitExitFullscreen;
+      var fn=document.exitFullscreen||document.webkitExitFullscreen||document.msExitFullscreen;
       if(fn){ try{ fn.call(document); }catch(err){} }
     }
   }

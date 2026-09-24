@@ -231,6 +231,120 @@ html:not(.js) .slide{position:relative;inset:auto;display:flex;margin:0 0 10px}
 html:not(.js) .r{opacity:1;transform:none}
 html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
 
+/* ======================================================================
+   첫 화면 — 기기 선택
+   ====================================================================== */
+#pick{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
+  background:#141312;padding:28px 20px;overflow-y:auto;
+  opacity:0;transition:opacity .3s}
+#pick.on{opacity:1}
+#pick[hidden]{display:none}
+.pk-in{width:100%;max-width:640px;text-align:center}
+.pk-eye{font:600 13px/1 var(--sans);letter-spacing:.24em;color:var(--coral);margin-bottom:16px}
+.pk-t{font:400 34px/1.28 var(--serif);letter-spacing:-.8px;color:#F4F1EA}
+.pk-d{font:400 15px/1.6 var(--sans);color:#9A948A;margin-top:12px}
+.pk-opts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:32px}
+.pk-b{display:flex;flex-direction:column;align-items:center;gap:4px;
+  background:rgba(250,249,245,.05);border:1px solid rgba(250,249,245,.16);border-radius:16px;
+  padding:26px 16px 22px;cursor:pointer;color:#F4F1EA;font-family:var(--sans);
+  transition:background .2s,border-color .2s,transform .2s}
+.pk-b:hover,.pk-b:focus-visible{background:rgba(204,120,92,.16);border-color:var(--coral);
+  transform:translateY(-2px);outline:none}
+.pk-b svg{width:46px;height:46px;margin-bottom:12px;stroke:#E8E3D8;stroke-width:1.5;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s}
+.pk-b:hover svg,.pk-b:focus-visible svg{stroke:var(--coral)}
+.pk-n{font:600 16px/1.3 var(--sans);letter-spacing:-.2px}
+.pk-s{font:400 12.5px/1.5 var(--sans);color:#948E84}
+.pk-b.rec{border-color:rgba(204,120,92,.5)}
+.pk-b.rec .pk-n:after{content:'추천';font:600 10.5px/1 var(--sans);letter-spacing:.1em;
+  color:var(--coral);background:rgba(204,120,92,.16);border-radius:3px;padding:4px 6px;margin-left:7px;
+  vertical-align:2px}
+.pk-f{font:400 12.5px/1.6 var(--sans);color:#6E685D;margin-top:26px}
+.pk-f b{color:#948E84;font-weight:600}
+@media (max-width:420px){
+  .pk-t{font-size:27px}
+  .pk-opts{grid-template-columns:1fr;gap:11px}
+  .pk-b{flex-direction:row;justify-content:flex-start;text-align:left;gap:16px;padding:18px 20px;
+    flex-wrap:wrap}
+  .pk-b svg{width:34px;height:34px;margin-bottom:0}
+  .pk-b .pk-n{flex:1 0 auto}
+  .pk-b .pk-s{flex:1 0 100%;padding-left:50px}
+}
+
+/* ======================================================================
+   스마트폰 — 세로 스크롤 모드
+   기준폭 460px로 1단 재배치한 뒤, 기기 폭에 맞춰 통째로 확대한다.
+   (px로 박힌 글자 크기를 하나하나 고치지 않아도 비율이 그대로 유지된다)
+   ====================================================================== */
+html.mv,html.mv body{height:auto;overflow-x:hidden;overflow-y:auto;touch-action:auto;
+  -webkit-overflow-scrolling:touch}
+body.mv{background:var(--canvas)}
+body.mv #stage{position:static;left:auto;top:auto;width:460px;height:auto;
+  transform:none!important;overflow:visible;background:transparent}
+body.mv .slide{position:relative;inset:auto;width:460px;height:auto;min-height:0;
+  padding:34px 24px 96px;margin:0}
+body.mv .body{zoom:1!important;flex:none;min-height:0}
+body.mv .trk{overflow:visible!important;min-height:0}
+body.mv .pcol{overflow:visible!important;display:block!important;min-height:0}
+body.mv .pcol>*{zoom:1!important;max-height:none}
+/* 모든 다단을 1단으로 — 인라인 grid-template-columns까지 덮는다 */
+body.mv .cols,body.mv .bgt,body.mv .figs,
+body.mv [style*="grid-template-columns"]{
+  grid-template-columns:1fr!important;gap:18px!important;height:auto!important;
+  align-items:start!important}
+body.mv .stats{display:grid!important;grid-template-columns:1fr 1fr;box-shadow:none;
+  border-bottom:1px solid var(--line)}
+body.mv .stat{flex:none;border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+  padding:18px 16px 15px}
+body.mv .stat:nth-child(2n){border-right:0}
+body.mv .stats>.stat:nth-last-child(-n+1){border-bottom:0}
+body.mv .bgt{border-bottom:0}
+body.mv .bgt>div{border-right:0!important;border-bottom:1px solid var(--line);
+  padding:18px 0!important}
+body.mv .bgt>div:last-child{border-bottom:0}
+body.mv .s-dark .stat,body.mv .s-dark .stats,body.mv .s-dark .bgt>div{border-color:var(--line-d)}
+/* 그리드/플렉스 항목의 자동 최소폭(min-width:auto)을 풀어 화면 폭까지 줄어들게 한다 */
+body.mv .body *{min-width:0}
+/* 넓은 표 — 글자를 줄이지 않고 옆으로 밀어서 본다 (.twrap은 모바일에서만 끼운다) */
+body.mv .twrap{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;max-width:100%}
+body.mv .twrap::-webkit-scrollbar{height:4px}
+body.mv .twrap::-webkit-scrollbar-thumb{background:rgba(20,20,19,.22);border-radius:4px}
+body.mv .s-dark .twrap::-webkit-scrollbar-thumb{background:rgba(250,249,245,.28)}
+body.mv .pageno{display:none}
+body.mv .foot,body.mv .termnote{position:static;left:auto;right:auto;bottom:auto;
+  max-width:none;text-align:left;margin-top:22px}
+/* 캡션·라벨처럼 작은 글자는 손안에서 읽히도록 조금 키운다 */
+body.mv .figcap,body.mv .figcap *,body.mv .applink{font-size:16px}
+body.mv .lb,body.mv .lb2{font-size:15.5px}
+body.mv .tag{font-size:15px}
+body.mv .muted{font-size:15.5px}
+body.mv .foot,body.mv .termnote{font-size:14.5px}
+body.mv .fig{max-height:560px}
+body.mv .callout{padding:24px 26px}
+body.mv .rule{margin:22px 0 24px}
+body.mv .sub{max-width:none}
+body.mv #prog,body.mv #hint{display:none}
+body.mv #ctl{bottom:auto;top:12px;right:12px}
+body.mv .r{opacity:1;transform:none}
+
+/* 하단 페이지 이동 바 */
+#mnav{position:fixed;left:0;right:0;bottom:0;z-index:90;display:flex;align-items:center;
+  gap:10px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  background:rgba(20,19,18,.93);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border-top:1px solid rgba(250,249,245,.14)}
+#mnav[hidden]{display:none}
+#mnav button{flex:1;font:600 14px/1 var(--sans);color:#F7F4ED;background:rgba(250,249,245,.10);
+  border:1px solid rgba(250,249,245,.20);border-radius:10px;padding:13px 10px;cursor:pointer;
+  letter-spacing:-.2px;transition:background .18s,opacity .18s}
+#mnav button:active{background:var(--coral);border-color:transparent}
+#mnav button:disabled{opacity:.3;cursor:default}
+#mpg{flex:0 0 auto;min-width:74px;text-align:center;font:600 13px/1 var(--sans);
+  color:#A8A296;letter-spacing:.08em;font-variant-numeric:tabular-nums}
+#mpg b{color:#F7F4ED;font-weight:700}
+#mbar{position:absolute;left:0;top:-2px;height:2px;background:var(--coral);width:0;
+  transition:width .3s ease}
+
 /* ---------- 인쇄 · PDF로 저장(⌘P) — 14장이 각각 한 페이지 ---------- */
 @media print{
   @page{size:1920px 1080px;margin:0}
@@ -1376,7 +1490,34 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
 <div id="hint">← → 이동 &nbsp;·&nbsp; 두 손가락 오므리기/펴기 확대 &nbsp;·&nbsp; A 전체보기 &nbsp;·&nbsp; F 전체화면</div>
 <div id="ctl">
   <button type="button" id="btnZoom" hidden>확대 해제</button>
+  <button type="button" id="btnMode" hidden>휴대폰 보기</button>
   <button type="button" id="btnFs">전체화면</button>
+</div>
+<div id="mnav" hidden>
+  <div id="mbar"></div>
+  <button type="button" id="mPrev">&larr; 이전</button>
+  <span id="mpg"><b>1</b> / 14</span>
+  <button type="button" id="mNext">다음 &rarr;</button>
+</div>
+<div id="pick" hidden>
+  <div class="pk-in">
+    <div class="pk-eye">2040 특화매장 · 다사점</div>
+    <div class="pk-t">어느 화면으로 보시겠습니까</div>
+    <div class="pk-d">같은 14페이지입니다. 보시는 기기에 맞춰 형태만 달라집니다.</div>
+    <div class="pk-opts">
+      <button type="button" class="pk-b" data-mode="d">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3.5" width="20" height="14" rx="2"/><path d="M8 20.5h8M12 17.5v3"/></svg>
+        <span class="pk-n">PC · 태블릿</span>
+        <span class="pk-s">가로 슬라이드 · 좌우로 넘기기</span>
+      </button>
+      <button type="button" class="pk-b" data-mode="m">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M10.4 18.7h3.2"/></svg>
+        <span class="pk-n">스마트폰</span>
+        <span class="pk-s">세로 스크롤 · 아래로 읽기</span>
+      </button>
+    </div>
+    <div class="pk-f">고른 뒤에도 화면 구석의 <b>보기 전환</b> 버튼으로 언제든 바꿀 수 있습니다.</div>
+  </div>
 </div>
 <script>
 (function(){
@@ -1386,6 +1527,16 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
   var hint=document.getElementById('hint');
   var btnFs=document.getElementById('btnFs');
   var btnZoom=document.getElementById('btnZoom');
+  var btnMode=document.getElementById('btnMode');
+  var pick=document.getElementById('pick');
+  var mnav=document.getElementById('mnav');
+  var mPrev=document.getElementById('mPrev');
+  var mNext=document.getElementById('mNext');
+  var mpg=document.getElementById('mpg');
+  var mbar=document.getElementById('mbar');
+
+  // 'd' = PC·태블릿(가로 슬라이드)  /  'm' = 스마트폰(세로 스크롤)
+  var MODE='d';
 
   // 슬라이드별 최대 step 계산
   var maxStep=slides.map(function(s){
@@ -1402,6 +1553,7 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
   var ZMAX=4, zk=1, tx=0, ty=0;
   function baseScale(){ return Math.min(window.innerWidth/1920, window.innerHeight/1080); }
   function fit(){
+    if(MODE==='m') return;
     var s=baseScale()*zk;
     // 확대 상태에서 슬라이드가 화면 밖으로 빠지지 않도록 이동 범위 제한
     var mx=Math.max(0, 960*s - window.innerWidth/2);
@@ -1412,10 +1564,11 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
     document.body.classList.toggle('zoomed', zk>1);
     btnZoom.hidden = zk<=1;
   }
-  window.addEventListener('resize',fit); fit();
+  window.addEventListener('resize',function(){ if(MODE==='m') mzoom(); else fit(); }); fit();
 
   // 손가락 사이 중간점(x,y)을 화면에 붙잡아 둔 채 배율만 R배 바꾼다
   function zoomAbout(R,x,y){
+    if(MODE==='m') return;
     var nk=Math.max(1, Math.min(ZMAX, zk*R));
     R=nk/zk; if(R===1) return;
     var cx=window.innerWidth/2, cy=window.innerHeight/2;
@@ -1497,7 +1650,7 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
   }
   function toggleFs(){ if(isFull()) exitFs(); else reqFs(); }
   function syncFs(){
-    btnFs.hidden=false;
+    btnFs.hidden=(MODE==='m');     // 세로 스크롤에서는 전체화면이 의미가 없다
     btnFs.textContent = isFull() ? '전체화면 해제' : '전체화면';
   }
   btnFs.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); toggleFs(); });
@@ -1523,6 +1676,7 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
 
   // 페이지별 오버플로우 안전장치 — 폰트 대체 등으로 내용이 넘치면 해당 페이지만 축소
   function autofit(){
+    if(MODE==='m') return;
     slides.forEach(function(s){
       var b=s.querySelector('.body'); if(!b) return;
       var wasOn=s.classList.contains('on');
@@ -1557,6 +1711,7 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
   }
 
   function paint(){
+    if(MODE==='m') st=maxStep[si]||0;          // 세로에서는 한 페이지를 통째로 보여준다
     slides.forEach(function(s,i){ s.classList.toggle('on', i===si); });
     var cur=slides[si];
     [].forEach.call(cur.querySelectorAll('.r[data-step]'),function(e){
@@ -1566,8 +1721,86 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
     var total=maxStep.reduce(function(a,b){return a+b;},0);
     var done=0; for(var i=0;i<si;i++) done+=maxStep[i]; done+=st;
     prog.style.width=(total?done/total*100:0)+'%';
+    if(MODE==='m') mpaint();
     try{ location.hash='p'+(si+1); }catch(e){}
   }
+
+  // ---------- 스마트폰 세로 스크롤 ----------
+  // 460px 기준폭으로 1단 재배치한 뒤, 기기 폭에 맞춰 통째로 확대한다.
+  function mzoom(){
+    if(MODE!=='m') return;
+    var w=document.documentElement.clientWidth||window.innerWidth||460;
+    var z=w/460;
+    if(z>1.25) z=1.25;                 // 넓은 화면에서 글자가 과하게 커지지 않게
+    stage.style.zoom=z;
+    stage.style.margin='0 auto';
+  }
+  // 넓은 표는 모바일에서만 스크롤 상자로 감싼다 (가로 모드 DOM은 손대지 않는다)
+  function mwrap(on){
+    if(on){
+      [].forEach.call(document.querySelectorAll('.slide table'),function(t){
+        if(t.parentNode&&t.parentNode.className==='twrap') return;
+        var w=document.createElement('div'); w.className='twrap';
+        t.parentNode.insertBefore(w,t); w.appendChild(t);
+      });
+    }else{
+      [].forEach.call(document.querySelectorAll('.twrap'),function(w){
+        while(w.firstChild) w.parentNode.insertBefore(w.firstChild,w);
+        w.parentNode.removeChild(w);
+      });
+    }
+  }
+  function mpaint(){
+    mPrev.disabled = si<=0;
+    mNext.disabled = si>=slides.length-1;
+    mpg.innerHTML='<b>'+(si+1)+'</b> / '+slides.length;
+    mbar.style.width=((si+1)/slides.length*100)+'%';
+    // 페이지 높이가 화면보다 짧을 때 아래 여백이 튀지 않도록 배경을 맞춘다
+    var bg='';
+    try{ bg=getComputedStyle(slides[si]).backgroundColor; }catch(e){}
+    document.documentElement.style.background=bg;
+    document.body.style.background=bg;
+  }
+  function mGo(d){
+    var n=si+d; if(n<0||n>=slides.length) return;
+    si=n; paint();
+    window.scrollTo(0,0);
+  }
+  mPrev.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); mGo(-1); });
+  mNext.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); mGo(1); });
+
+  function applyMode(m){
+    MODE=m;
+    var de=document.documentElement;
+    if(m==='m'){
+      zk=1; tx=0; ty=0;
+      de.classList.add('mv'); document.body.classList.add('mv');
+      document.body.classList.remove('zoomed','grabbing');
+      stage.style.transform='none';
+      mwrap(true);
+      btnZoom.hidden=true;
+      mnav.hidden=false;
+      mzoom();
+      paint();
+      window.scrollTo(0,0);
+    }else{
+      de.classList.remove('mv'); document.body.classList.remove('mv');
+      mwrap(false);
+      mnav.hidden=true;
+      stage.style.zoom=''; stage.style.margin='';
+      de.style.background=''; document.body.style.background='';
+      st=1;
+      fit(); autofit(); fitcols(); paint();
+      window.scrollTo(0,0);
+    }
+    btnMode.hidden=false;
+    btnMode.textContent = (m==='m') ? '가로 보기' : '휴대폰 보기';
+    syncFs();
+  }
+  btnMode.addEventListener('click',function(e){
+    e.stopPropagation(); e.preventDefault();
+    applyMode(MODE==='m'?'d':'m');
+  });
 
   function revealAll(){ st=maxStep[si]; paint(); }
 
@@ -1587,6 +1820,11 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
 
   document.addEventListener('keydown',function(e){
     var k=e.key;
+    if(MODE==='m'){                       // 세로 스크롤에서는 방향키를 스크롤에 양보한다
+      if(k==='PageDown'){ e.preventDefault(); mGo(1); }
+      else if(k==='PageUp'){ e.preventDefault(); mGo(-1); }
+      return;
+    }
     if(k==='ArrowRight'||k==='ArrowDown'||k===' '||k==='PageDown'||k==='Enter'){ e.preventDefault(); next(); }
     else if(k==='ArrowLeft'||k==='ArrowUp'||k==='PageUp'||k==='Backspace'){ e.preventDefault(); prev(); }
     else if(k==='Escape'){ zoomOff(); if(faux) setFaux(false); }
@@ -1602,7 +1840,8 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
 
   // 클릭 이동 — 확대는 손가락으로만 하므로 넘김과 부딪히지 않는다
   document.addEventListener('click',function(e){
-    if(zk>1) return;              // 확대 중에는 클릭으로 넘기지 않는다
+    if(MODE==='m') return;        // 세로 스크롤에서는 탭으로 넘기지 않는다
+    if(zk>1) return;            // 확대 중에는 클릭으로 넘기지 않는다
     if(Date.now()<noTapUntil) return;   // 핀치 직후의 합성 탭은 넘김이 아니다
     if(dragged){ dragged=false; return; }
     if(e.clientX < window.innerWidth*0.14){ prev(); } else { next(); }
@@ -1610,6 +1849,7 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
 
   var lock=false;
   document.addEventListener('wheel',function(e){
+    if(MODE==='m') return;        // 세로 스크롤은 브라우저에 맡긴다
     // 트랙패드 오므리기/펴기는 ctrlKey가 붙은 wheel 이벤트로 들어온다
     if(e.ctrlKey){ e.preventDefault(); zoomAbout(Math.exp(-e.deltaY*0.012), e.clientX, e.clientY); return; }
     if(zk>1){ tx-=e.deltaX; ty-=e.deltaY; fit(); return; }   // 확대 중에는 스크롤로 이동
@@ -1626,12 +1866,14 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
     return Math.sqrt(Math.pow(a.clientX-b.clientX,2)+Math.pow(a.clientY-b.clientY,2));
   }
   document.addEventListener('touchstart',function(e){
+    if(MODE==='m') return;
     if(e.touches.length===2){ pinch=true; pd0=tdist(e)||1; pk0=zk; return; }
     sx0=e.touches[0].clientX; sy0=e.touches[0].clientY;
     px0=sx0-tx; py0=sy0-ty;
   },{passive:false});
   var HASGEST = ('ongesturechange' in window);
   document.addEventListener('touchmove',function(e){
+    if(MODE==='m') return;
     if(e.touches.length===2&&pinch){
       e.preventDefault();
       if(HASGEST) return;              // iOS는 gesturechange 한쪽만 쓴다(이중 적용 방지)
@@ -1646,18 +1888,21 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
   },{passive:false});
   // iOS Safari 전용 — 핀치를 gesture 이벤트로 따로 보낸다
   var gk0=1;
-  document.addEventListener('gesturestart',function(e){ e.preventDefault(); pinch=true; gk0=zk; },false);
+  document.addEventListener('gesturestart',function(e){ if(MODE==='m') return; e.preventDefault(); pinch=true; gk0=zk; },false);
   document.addEventListener('gesturechange',function(e){
+    if(MODE==='m') return;
     e.preventDefault();
     var gx=(e.clientX===undefined?window.innerWidth/2:e.clientX);
     var gy=(e.clientY===undefined?window.innerHeight/2:e.clientY);
     zoomAbout((gk0*e.scale)/zk, gx, gy);
   },false);
   document.addEventListener('gestureend',function(e){
+    if(MODE==='m') return;
     e.preventDefault(); noTapUntil=Date.now()+400; setTimeout(function(){pinch=false;},120);
   },false);
 
   document.addEventListener('touchend',function(e){
+    if(MODE==='m') return;
     if(pinch){ if(e.touches.length===0){ pinch=false; noTapUntil=Date.now()+400; } return; }
     if(zk>1) return;              // 확대 중에는 스와이프로 넘기지 않는다
     if(Date.now()<noTapUntil) return;
@@ -1671,6 +1916,7 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
   if(h){ var n=parseInt(h[1],10)-1; if(n>=0&&n<slides.length) si=n; }
   // 컬럼 넘침 자동 보정 — 본문/사진 컬럼이 슬라이드를 넘치면 미세 축소
   function fitcols(){
+    if(MODE==='m') return;
     var cols=document.querySelectorAll('.pcol');
     for(var i=0;i<cols.length;i++){
       var c=cols[i], kids=[].slice.call(c.children), z=1, g=0;
@@ -1684,8 +1930,39 @@ html:not(.js) #hint,html:not(.js) #prog,html:not(.js) #ctl{display:none}
   }
 
   st=1; autofit(); fitcols(); paint();
-  if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(function(){ autofit(); fitcols(); paint(); }); }
-  var afT; window.addEventListener('resize',function(){ clearTimeout(afT); afT=setTimeout(function(){autofit();fitcols();paint();},260); });
+  if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(function(){
+    if(MODE==='m'){ mzoom(); paint(); return; }
+    autofit(); fitcols(); paint();
+  }); }
+  var afT; window.addEventListener('resize',function(){
+    clearTimeout(afT);
+    afT=setTimeout(function(){
+      if(MODE==='m'){ mzoom(); paint(); return; }
+      autofit(); fitcols(); paint();
+    },260);
+  });
+
+  // ---------- 첫 화면 — 기기 선택 ----------
+  function showPick(){
+    var w=document.documentElement.clientWidth||window.innerWidth||0;
+    var phone = w<820 || /Android|iPhone|iPod|Windows Phone/i.test(navigator.userAgent||'');
+    var rec=pick.querySelector('.pk-b[data-mode="'+(phone?'m':'d')+'"]');
+    if(rec) rec.classList.add('rec');
+    pick.hidden=false;
+    requestAnimationFrame(function(){ pick.classList.add('on'); });
+  }
+  function hidePick(){
+    pick.classList.remove('on');
+    setTimeout(function(){ pick.hidden=true; },300);
+  }
+  [].forEach.call(pick.querySelectorAll('.pk-b'),function(b){
+    b.addEventListener('click',function(e){
+      e.stopPropagation(); e.preventDefault();
+      applyMode(b.getAttribute('data-mode'));
+      hidePick();
+    });
+  });
+  showPick();
 
   setTimeout(function(){ hint.style.opacity='0'; },5200);
   document.addEventListener('mousemove',function(){
